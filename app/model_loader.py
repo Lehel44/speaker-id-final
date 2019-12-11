@@ -3,8 +3,6 @@ import tensorflow as tf
 from keras.models import load_model
 import paths
 
-
-
 class ModelLoader:
 
     def __init__(self):

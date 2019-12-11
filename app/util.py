@@ -8,7 +8,7 @@ import logging
 from numpy import dot
 from numpy.linalg import norm
 
-from app import paths
+import paths
 
 
 def allowed_file(app, filename):

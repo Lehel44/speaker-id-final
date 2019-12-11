@@ -3,15 +3,14 @@ import httplib
 import math
 import os
 import uuid
-
 import numpy as np
+
 import tensorflow as tf
 from flask import Flask, request, Response, json
 
 import paths
-from app.compute import compare_vectors
-from app.util import check_audio_file, average_vectors, update_dict, get_name_by_id, \
-    get_password
+from compute import compare_vectors
+from util import check_audio_file, update_dict, average_vectors, get_password, get_name_by_id
 from model_loader import ModelLoader
 from preprocess import preprocess
 
@@ -28,6 +27,9 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 # Load models.
 model_loader = ModelLoader()
 
+@app.route('/hello', methods=['GET'])
+def hello():
+    return Response(str(200), mimetype='text/plain')
 
 @app.route('/enroll', methods=['POST'])
 def enroll():
@@ -58,11 +60,14 @@ def identify():
             np.save(paths.VECTORS_TO_AVERAGE + user_id, voice_vector)
             response = Response(status=httplib.FORBIDDEN, mimetype='text/plain')
             response.headers['user_id'] = user_id
+            response.headers['distance'] = min_value
             return response
         # If similar enough, then average vectors.
         average_vectors(user_id)
         response = Response(status=httplib.ACCEPTED, mimetype='text/plain')
         response.headers['user_id'] = user_id
+        response.headers['username'] = get_name_by_id(user_id)
+        response.headers['distance'] = min_value
         return response
     return Response(status=httplib.BAD_REQUEST, mimetype='text/plain')
 
@@ -71,11 +76,16 @@ def identify():
 def authenticate():
     password_from_req = request.form.get('password')
     user_id = request.form.get('user_id')
+    distance = request.form.get('distance')
     real_password = get_password(user_id)
     if real_password == password_from_req:
         average_vectors(user_id, np.load(paths.VECTORS_TO_AVERAGE + user_id + '.npy'))
-        response_body = {'user_id': user_id, 'user_name': get_name_by_id(user_id)}
-        return Response(response=json.dumps(response_body), status=httplib.ACCEPTED, mimetype='text/plain')
+        #response_body = {'user_id': user_id, 'user_name': get_name_by_id(user_id)}
+        response = Response(status=httplib.ACCEPTED, mimetype='text/plain')
+        response.headers['user_id'] = user_id
+        response.headers['user_name'] = get_name_by_id(user_id)
+        response.headers['distance'] = distance
+        return response
     # Delete stored voice vector.
     os.remove(paths.VECTORS_TO_AVERAGE + user_id + '.npy')
     return Response(status=httplib.FORBIDDEN, mimetype='text/plain')

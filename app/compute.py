@@ -1,10 +1,8 @@
 import os
 from os import walk
-
 import numpy as np
-
-from app import paths
-from app.util import count_distance, update_dict, write_dict_to_file, get_name_by_id
+import paths
+from util import count_distance, get_name_by_id, update_dict, write_dict_to_file
 
 def compare_vectors(app, current_vector, distance='euclidean'):
     distance_map = dict()
